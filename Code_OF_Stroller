@@ -1,0 +1,191 @@
+//Arduino Bluetooth Controlled Car
+//Before uploading the code you have to install the necessary library
+//Note - Disconnect the Bluetooth Module before hiting the upload button otherwise you'll get compilation error message.
+//AFMotor Library https://learn.adafruit.com/adafruit-motor-shield/library-install 
+//After downloading the library open Arduino IDE >> go to sketch >> Include Libray >> ADD. ZIP Libray >> Select the downloaded 
+//ZIP File >> Open it >> Done
+//Now You Can Upload the Code without any problem but make sure the bt module isn't connected with Arduino while uploading code
+
+#include <AFMotor.h>
+#include<NewPing.h>
+#include<Servo.h>
+#define RIGHT A2
+#define LEFT A3
+#define TRIGGER_PIN A1
+#define ECHO_PIN A0
+#define MAX_DISTANCE 100
+
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+
+Servo myservo;
+ 
+int pos =0;
+
+//initial motors pin
+AF_DCMotor Motor1(1, MOTOR12_1KHZ); 
+AF_DCMotor Motor2(2, MOTOR12_1KHZ); 
+AF_DCMotor Motor3(3, MOTOR34_1KHZ);
+AF_DCMotor Motor4(4, MOTOR34_1KHZ);
+
+char command; 
+
+void setup() 
+{       
+  Serial.begin(9600);  //Set the baud rate to your Bluetooth module.
+
+  myservo.attach(10);
+  pinMode(RIGHT, INPUT);
+  pinMode(LEFT, INPUT);
+
+  
+}
+
+void loop(){
+  if(Serial.available() > 0){ 
+    command = Serial.read(); 
+    Stop(); //initialize with motors stoped
+    //Change pin mode only if new command is different from previous.   
+    //Serial.println(command);
+    switch(command)
+    {
+    case 'F':  
+    Serial.println("forward");
+      forward();
+      break;
+    case 'B':  
+    Serial.println("Backward");
+       back();
+      break;
+    case 'L': 
+    Serial.println("Toward Left"); 
+      left();
+      break;
+    case 'R':
+    Serial.println("Toward Right");
+      right();
+      break;
+    }
+} 
+else{
+ delay(50);
+ unsigned int distance = sonar.ping_cm();
+Serial.print("distance");
+Serial.println(distance);
+
+
+int Right_Value = digitalRead(RIGHT);
+int Left_Value = digitalRead(LEFT);
+
+Serial.print("RIGHT");
+Serial.println(Right_Value);
+Serial.print("LEFT");
+Serial.println(Left_Value);
+
+if((Right_Value==1) && (distance>=10 && distance<=30)&&(Left_Value==1)){
+  Motor1.setSpeed(120);
+  Motor1.run(FORWARD);
+  Motor2.setSpeed(120);
+  Motor2.run(FORWARD);
+  Motor3.setSpeed(120);
+  Motor3.run(FORWARD);
+  Motor4.setSpeed(120);
+  Motor4.run(FORWARD);
+}else if((Right_Value==0) && (Left_Value==1)) {
+  Motor1.setSpeed(200);
+  Motor1.run(FORWARD);
+  Motor2.setSpeed(200);
+  Motor2.run(FORWARD);
+  Motor3.setSpeed(100);
+  Motor3.run(BACKWARD);
+  Motor4.setSpeed(100);
+  Motor4.run(BACKWARD);
+}else if((Right_Value==1)&&(Left_Value==0)) {
+  Motor1.setSpeed(100);
+  Motor1.run(BACKWARD);
+  Motor2.setSpeed(100);
+  Motor2.run(BACKWARD);
+  Motor3.setSpeed(200);
+  Motor3.run(FORWARD);
+  Motor4.setSpeed(200);
+  Motor4.run(FORWARD);
+}else if((Right_Value==1)&&(Left_Value==1)) {
+  Motor1.setSpeed(0);
+  Motor1.run(RELEASE);
+  Motor2.setSpeed(0);
+  Motor2.run(RELEASE);
+  Motor3.setSpeed(0);
+  Motor3.run(RELEASE);
+  Motor4.setSpeed(0);
+  Motor4.run(RELEASE);
+}else if(distance > 1 && distance < 10) {
+  Motor1.setSpeed(0);
+  Motor1.run(RELEASE);
+  Motor2.setSpeed(0);
+  Motor2.run(RELEASE);
+  Motor3.setSpeed(0);
+  Motor3.run(RELEASE);
+  Motor4.setSpeed(0);
+  Motor4.run(RELEASE);
+  }
+}
+}
+
+void forward()
+{
+  Motor1.setSpeed(255); //Define maximum velocity
+  Motor1.run(FORWARD); //rotate the motor clockwise
+  Motor2.setSpeed(255); //Define maximum velocity
+  Motor2.run(FORWARD); //rotate the motor clockwise
+  Motor3.setSpeed(255);//Define maximum velocity
+  Motor3.run(FORWARD); //rotate the motor clockwise
+  Motor4.setSpeed(255);//Define maximum velocity
+  Motor4.run(FORWARD); //rotate the motor clockwise
+}
+
+void back()
+{
+  Motor1.setSpeed(255); //Define maximum velocity
+  Motor1.run(BACKWARD); //rotate the motor anti-clockwise
+  Motor2.setSpeed(255); //Define maximum velocity
+  Motor2.run(BACKWARD); //rotate the motor anti-clockwise
+  Motor3.setSpeed(255); //Define maximum velocity
+  Motor3.run(BACKWARD); //rotate the motor anti-clockwise
+  Motor4.setSpeed(255); //Define maximum velocity
+  Motor4.run(BACKWARD); //rotate the motor anti-clockwise
+}
+
+void left()
+{
+  Motor1.setSpeed(255); //Define maximum velocity
+  Motor1.run(BACKWARD); //rotate the motor anti-clockwise
+  Motor2.setSpeed(255); //Define maximum velocity
+  Motor2.run(BACKWARD); //rotate the motor anti-clockwise
+  Motor3.setSpeed(255); //Define maximum velocity
+  Motor3.run(FORWARD);  //rotate the motor clockwise
+  Motor4.setSpeed(255); //Define maximum velocity
+  Motor4.run(FORWARD);  //rotate the motor clockwise
+}
+
+void right()
+{
+  Motor1.setSpeed(255); //Define maximum velocity
+  Motor1.run(FORWARD); //rotate the motor clockwise
+  Motor2.setSpeed(255); //Define maximum velocity
+  Motor2.run(FORWARD); //rotate the motor clockwise
+  Motor3.setSpeed(255); //Define maximum velocity
+  Motor3.run(BACKWARD); //rotate the motor anti-clockwise
+  Motor4.setSpeed(255); //Define maximum velocity
+  Motor4.run(BACKWARD); //rotate the motor anti-clockwise
+} 
+
+void Stop()
+{
+  Motor1.setSpeed(0); //Define minimum velocity
+  Motor1.run(RELEASE); //stop the motor when release the button
+  Motor2.setSpeed(0); //Define minimum velocity
+  Motor2.run(RELEASE); //rotate the motor clockwise
+  Motor3.setSpeed(0); //Define minimum velocity
+  Motor3.run(RELEASE); //stop the motor when release the button
+  Motor4.setSpeed(0); //Define minimum velocity
+  Motor4.run(RELEASE); //stop the motor when release the button
+}
